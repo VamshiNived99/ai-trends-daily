@@ -1,16 +1,16 @@
 name: Daily AI Blog Automation
 
 on:
-  workflow_dispatch:   # allows you to run manually from the Actions tab
+  workflow_dispatch:
   schedule:
-    - cron: "0 9 * * *"   # runs every day at 9 AM UTC
+    - cron: "0 6 * * *"  # runs every day at 6:00 UTC (you can change this time)
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,39 +20,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install markdown openai
+          python -m pip install --upgrade pip
+          pip install requests google-generativeai
 
       - name: Run automation
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          python automation.py
-
-      - name: Convert markdown to HTML
-        run: |
-          python - <<'PY'
-          import glob, markdown, os
-          from pathlib import Path
-          Path('public/posts').mkdir(parents=True, exist_ok=True)
-          for md in glob.glob('content/*.md'):
-              stem = Path(md).stem
-              out_file = Path('public/posts') / (stem + '.html')
-              with open(md, 'r', encoding='utf-8') as f:
-                  md_text = f.read()
-              html_body = markdown.markdown(md_text, extensions=['fenced_code','tables'])
-              html = f"""<!doctype html>
-              <html lang="en"><head>
-              <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-              <title>{stem}</title>
-              </head><body><main>{html_body}</main></body></html>"""
-              with open(out_file, 'w', encoding='utf-8') as o:
-                  o.write(html)
-          PY
-
-      - name: Commit and push generated files
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add public/posts content || true
-          git commit -m "Automated blog update" || echo "No changes to commit"
-          git push
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python automation.py
